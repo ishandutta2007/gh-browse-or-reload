@@ -16,7 +16,7 @@ def get_target_url():
     try:
         result = subprocess.run(
             ["gh", "browse", "--no-browser"] + args,
-            capture_code=True,
+            capture_output=True,
             text=True,
             check=True
         )
@@ -65,6 +65,23 @@ def try_browser_reload(url):
     elif sys.platform.startswith("linux"):
         # Linux xdotool / wmctrl parsing fallback
         pass
+        
+    elif sys.platform == "win32":
+        if EXTENSION_ID == "YOUR_EXTENSION_ID_HERE" or not EXTENSION_ID:
+            print(f"Warning: GH_BROWSER_EXTENSION_ID is not set (Current value: '{EXTENSION_ID}'). Falling back to native gh browse.", file=sys.stderr)
+            return False
+            
+        import urllib.parse
+        trigger_url = f"chrome-extension://{EXTENSION_ID}/trigger.html?url={urllib.parse.quote(url)}"
+        
+        print(f"DEBUG: Handing off to extension: {trigger_url}")
+        
+        # Launch the trigger URL in the default browser. 
+        # The extension will intercept this, reload the tab if it exists, or navigate to it if it doesn't.
+        os.startfile(trigger_url)
+        
+        # Return True so the CLI script exits here, delegating full control to the extension.
+        return True
         
     return False
 

@@ -1,0 +1,2 @@
+[console_scripts]
+gh-browse-or-reload = gh_browse_or_reload.cli:main

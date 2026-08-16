@@ -1,4 +1,4 @@
-chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "browse_or_reload") {
         const targetUrl = request.url;
         
