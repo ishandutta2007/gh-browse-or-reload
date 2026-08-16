@@ -5,9 +5,45 @@ import json
 import urllib.request
 import urllib.error
 import os
+import json
 
-# Fetch the Extension ID from environment variables
-EXTENSION_ID = os.environ.get("GH_BROWSER_EXTENSION_ID", "clkkecemokoljabkngdciflakndbblia")
+CONFIG_DIR = os.path.expanduser("~/.config/gh-browse-or-reload")
+CONFIG_FILE = os.path.join(CONFIG_DIR, "config.json")
+
+def get_extension_id():
+    # If explicitly overridden by env var, use it
+    if "GH_BROWSER_EXTENSION_ID" in os.environ:
+        return os.environ["GH_BROWSER_EXTENSION_ID"]
+        
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, "r") as f:
+                data = json.load(f)
+                ext_id = data.get("extension_id")
+                if ext_id and ext_id != "YOUR_EXTENSION_ID_HERE":
+                    return ext_id
+        except Exception:
+            pass
+            
+    # Prompt the user for the ID on first run
+    print("\n--- First Run Setup ---")
+    print("To enable seamless tab reloading on Windows/Linux, you need the companion browser extension installed.")
+    print("Please enter your Chrome/Edge Extension ID (or press Enter to skip and fallback to default 'gh browse'):")
+    
+    try:
+        ext_id = input("> ").strip()
+    except (EOFError, KeyboardInterrupt):
+        return None
+        
+    if ext_id:
+        os.makedirs(CONFIG_DIR, exist_ok=True)
+        with open(CONFIG_FILE, "w") as f:
+            json.dump({"extension_id": ext_id}, f)
+        print(f"Settings saved to {CONFIG_FILE}. You won't be asked again!\n-----------------------\n")
+        return ext_id
+        
+    return None
+
 def get_target_url():
     """Gets the URL that `gh browse --n` would generate."""
     # Pass all incoming CLI args directly to gh browse with a no-op / print flag if possible,
@@ -67,8 +103,8 @@ def try_browser_reload(url):
         pass
         
     elif sys.platform == "win32":
-        if EXTENSION_ID == "YOUR_EXTENSION_ID_HERE" or not EXTENSION_ID:
-            print(f"Warning: GH_BROWSER_EXTENSION_ID is not set (Current value: '{EXTENSION_ID}'). Falling back to native gh browse.", file=sys.stderr)
+        ext_id = get_extension_id()
+        if not ext_id:
             return False
             
         import urllib.parse
@@ -81,7 +117,7 @@ def try_browser_reload(url):
 <h2>Routing to GitHub...</h2>
 <script>
     const targetUrl = "{url}";
-    const extId = "{EXTENSION_ID}";
+    const extId = "{ext_id}";
     chrome.runtime.sendMessage(extId, {{ action: "browse_or_reload", url: targetUrl }}, (response) => {{
         if (chrome.runtime.lastError) {{
             document.body.innerHTML = "Error connecting to extension: " + chrome.runtime.lastError.message;

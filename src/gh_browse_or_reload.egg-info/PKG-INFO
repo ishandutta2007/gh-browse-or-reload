@@ -42,11 +42,16 @@ Because standard shell scripts cannot natively snoop on your browser tabs due to
 
 ### 3. Configure the Extension ID
 
-Export the Extension ID as an environment variable in your shell profile (`~/.zshrc`, `~/.bashrc`, or Windows environment variables):
-
-```bash
-export GH_BROWSER_EXTENSION_ID="YOUR_EXTENSION_ID_HERE"
+The first time you run `gh-browse-or-reload`, the tool will detect that it needs an extension ID and interactively prompt you for it:
+```text
+--- First Run Setup ---
+To enable seamless tab reloading on Windows/Linux, you need the companion browser extension installed.
+Please enter your Chrome/Edge Extension ID (or press Enter to skip and fallback to default 'gh browse'):
+> 
 ```
+Once entered, it will be securely saved to `~/.config/gh-browse-or-reload/config.json` and you will never be asked again!
+
+*(Advanced users: You can still override this on the fly by exporting `GH_BROWSER_EXTENSION_ID` in your shell).*
 
 ### 4. (Optional) Create a Shell Alias
 
