@@ -7,7 +7,7 @@ import urllib.error
 import os
 
 # Fetch the Extension ID from environment variables
-EXTENSION_ID = os.environ.get("GH_BROWSER_EXTENSION_ID", "YOUR_EXTENSION_ID_HERE")
+EXTENSION_ID = os.environ.get("GH_BROWSER_EXTENSION_ID", "clkkecemokoljabkngdciflakndbblia")
 def get_target_url():
     """Gets the URL that `gh browse --n` would generate."""
     # Pass all incoming CLI args directly to gh browse with a no-op / print flag if possible,
@@ -72,15 +72,59 @@ def try_browser_reload(url):
             return False
             
         import urllib.parse
-        trigger_url = f"chrome-extension://{EXTENSION_ID}/trigger.html?url={urllib.parse.quote(url)}"
+        from http.server import BaseHTTPRequestHandler, HTTPServer
+        import threading
         
-        print(f"DEBUG: Handing off to extension: {trigger_url}")
+        # HTML payload that sends a message to the extension
+        html_payload = f"""<!DOCTYPE html>
+<html><body>
+<h2>Routing to GitHub...</h2>
+<script>
+    const targetUrl = "{url}";
+    const extId = "{EXTENSION_ID}";
+    chrome.runtime.sendMessage(extId, {{ action: "browse_or_reload", url: targetUrl }}, (response) => {{
+        if (chrome.runtime.lastError) {{
+            document.body.innerHTML = "Error connecting to extension: " + chrome.runtime.lastError.message;
+        }} else if (response && response.status === "not_found") {{
+            // Tab not found, use this tab to go to GitHub
+            window.location.href = targetUrl;
+        }} else {{
+            // Tab found and reloaded, close this tab
+            window.close();
+        }}
+    }});
+</script></body></html>"""
+
+        class RequestHandler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                self.send_response(200)
+                self.send_header("Content-type", "text/html")
+                self.end_headers()
+                self.wfile.write(html_payload.encode('utf-8'))
+                
+                # Only shut down the server if the main page was requested 
+                # (browsers often fire a concurrent request for /favicon.ico which could eat the single request)
+                if self.path == '/':
+                    threading.Thread(target=self.server.shutdown).start()
+            
+            def log_message(self, format, *args):
+                pass # Suppress terminal logging
+
+        # Bind to port 0 to get a random free port
+        server = HTTPServer(('127.0.0.1', 0), RequestHandler)
+        port = server.server_port
         
-        # Launch the trigger URL in the default browser. 
-        # The extension will intercept this, reload the tab if it exists, or navigate to it if it doesn't.
-        os.startfile(trigger_url)
+        # Start server in a background thread 
+        threading.Thread(target=server.serve_forever, daemon=True).start()
         
-        # Return True so the CLI script exits here, delegating full control to the extension.
+        # Because we use 'http://', Windows native os.startfile correctly routes to the EXISTING browser!
+        print(f"DEBUG: Handing off to browser via local server on port {port}")
+        os.startfile(f"http://127.0.0.1:{port}/")
+        
+        import time
+        # Give the browser up to 5 seconds to fetch the page before the CLI script forcibly exits
+        time.sleep(5)
+        
         return True
         
     return False

@@ -1,10 +1,14 @@
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => {
     if (request.action === "browse_or_reload") {
         const targetUrl = request.url;
         
         chrome.tabs.query({}, (tabs) => {
-            // Check if any tab matches the target URL (ignoring protocol/trailing slashes slightly if needed)
-            const matchingTab = tabs.find(tab => tab.url && tab.url.split('#')[0].replace(/\/+$/, '') === targetUrl.split('#')[0].replace(/\/+$/, ''));
+            // Normalize URLs by removing hashes, query parameters, and trailing slashes
+            const normalizeUrl = (u) => u.split('#')[0].split('?')[0].replace(/\/+$/, '');
+            const normalizedTarget = normalizeUrl(targetUrl);
+            
+            // Check if any tab matches the target URL or is a subpage of it (e.g. /tree/main)
+            const matchingTab = tabs.find(tab => tab.url && normalizeUrl(tab.url).startsWith(normalizedTarget));
             
             if (matchingTab) {
                 // Reload the existing tab and bring it to focus
