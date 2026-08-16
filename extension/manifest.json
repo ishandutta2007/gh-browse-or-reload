@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "GH Browse or Reload Bridge",
+  "version": "1.0",
+  "description": "Bridges Python CLI with Chrome to reload existing GitHub tabs.",
+  "permissions": ["tabs"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "externally_connectable": {
+    "ids": ["*"]
+  }
+}
