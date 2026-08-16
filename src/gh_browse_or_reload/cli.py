@@ -4,10 +4,10 @@ import subprocess
 import json
 import urllib.request
 import urllib.error
+import os
 
-# Replace with your actual Chrome Extension ID after manual unpacking/loading
-EXTENSION_ID = "YOUR_EXTENSION_ID_HERE"
-
+# Fetch the Extension ID from environment variables
+EXTENSION_ID = os.environ.get("GH_BROWSER_EXTENSION_ID", "YOUR_EXTENSION_ID_HERE")
 def get_target_url():
     """Gets the URL that `gh browse --n` would generate."""
     # Pass all incoming CLI args directly to gh browse with a no-op / print flag if possible,
