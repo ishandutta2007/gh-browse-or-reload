@@ -89,35 +89,31 @@ If you want to contribute to the project or run it locally from source.
 
 ---
 
-## 🚀 For Package Publishers
+## 🚀 For Package Publishers (Automated CI/CD)
 
-To release a new version of `gh-browse-or-reload` to PyPI, follow these steps:
+This repository is configured with a GitHub Actions workflow that automatically builds and publishes the package to PyPI whenever a new version tag is pushed.
 
-### 1. Prepare the Release
-Update the `version = "X.Y.Z"` field in the `[project]` section of `pyproject.toml`.
+### 1. Initial Repository Setup
+To enable automated publishing, you must add your PyPI API token to your GitHub repository secrets:
+1. Go to your PyPI account and generate an API Token.
+2. Go to your GitHub Repository -> **Settings** -> **Secrets and variables** -> **Actions**.
+3. Click **New repository secret**.
+4. Name it `PYPI_API_TOKEN` and paste your PyPI token as the value.
 
-### 2. Build the Package
-Ensure you have the latest `build` and `twine` tools installed:
-```bash
-pip install --upgrade build twine
-```
+### 2. How to Publish a New Release
+Whenever you are ready to publish a new version to PyPI, simply follow these steps:
 
-Run the build module from the root directory (where `pyproject.toml` is located):
-```bash
-python -m build
-```
-This will generate two files in the `dist/` directory: a source archive (`.tar.gz`) and a built distribution (`.whl`).
+1. **Update the Version:** Open `pyproject.toml` and bump the `version` field (e.g., from `"0.1.0"` to `"0.1.1"`). Commit and push this change to your main branch:
+   ```bash
+   git add pyproject.toml
+   git commit -m "Bump version to 0.1.1"
+   git push origin main
+   ```
 
-### 3. Publish to PyPI
-Upload the newly built package to PyPI using Twine:
-```bash
-twine upload dist/*
-```
-You will be prompted for your PyPI username (`__token__`) and password (your PyPI API token).
+2. **Create and Push a Tag:** Create a git tag matching your new version (must start with `v`) and push it to GitHub:
+   ```bash
+   git tag v0.1.1
+   git push origin v0.1.1
+   ```
 
-### 4. Test the Published Package
-In a clean environment, verify the package was published successfully:
-```bash
-pip install gh-browse-or-reload
-gh-browse-or-reload --help
-```
+That's it! Pushing the `v*` tag will automatically trigger the GitHub Actions workflow. The system will build the `.tar.gz` and `.whl` distributions and securely upload them directly to PyPI. You can watch the progress in the **Actions** tab of your GitHub repository.
