@@ -142,7 +142,7 @@ def try_browser_reload(url):
                 self.wfile.write(html_payload.encode('utf-8'))
                 
                 # Signal that the main page was served (ignore /favicon.ico etc.)
-                if self.path == '/':
+                if self.path.startswith('/?') or self.path == '/':
                     page_served.set()
             
             def log_message(self, format, *args):
@@ -156,12 +156,25 @@ def try_browser_reload(url):
         server_thread.daemon = False
         server_thread.start()
         
-        # Open URL in the user's existing default browser instance
-        os.startfile(f"http://127.0.0.1:{port}/")
+        import webbrowser
+        import time
         
-        # Block until the browser actually fetches the page (up to 15 seconds)
-        if not page_served.wait(timeout=15):
-            print("Warning: Browser did not fetch the page within 15 seconds.", file=sys.stderr)
+        # Retry up to 3 times — os.startfile / webbrowser.open can silently fail on Windows
+        max_attempts = 3
+        for attempt in range(1, max_attempts + 1):
+            # Cache-busting query param prevents the browser from serving a cached response
+            cache_buster = int(time.time() * 1000)
+            open_url = f"http://127.0.0.1:{port}/?_={cache_buster}"
+            
+            webbrowser.open(open_url)
+            
+            if page_served.wait(timeout=5):
+                break
+            
+            if attempt < max_attempts:
+                print(f"Browser didn't connect (attempt {attempt}/{max_attempts}), retrying...", file=sys.stderr)
+        else:
+            print("Warning: Browser did not fetch the page after 3 attempts.", file=sys.stderr)
         
         server.shutdown()
         server_thread.join(timeout=2)
