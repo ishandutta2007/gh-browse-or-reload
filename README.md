@@ -105,12 +105,17 @@ If you want to contribute to the project or run it locally from source.
 
 This repository is configured with a GitHub Actions workflow that automatically builds and publishes the package to PyPI whenever a new version tag is pushed.
 
-### 1️⃣ Initial Repository Setup
-To enable automated publishing, you must add your PyPI API token to your GitHub repository secrets:
-1. 🔑 Go to your PyPI account and generate an API Token.
-2. ⚙️ Go to your GitHub Repository -> **Settings** -> **Secrets and variables** -> **Actions**.
-3. ➕ Click **New repository secret**.
-4. 🏷️ Name it `PYPI_API_TOKEN` and paste your PyPI token as the value.
+### 1️⃣ Initial Repository Setup (One-Time)
+PyPI uses **Trusted Publishers** (OpenID Connect) to securely authenticate GitHub Actions — no API tokens needed!
+
+1. 🔑 Log into [PyPI](https://pypi.org/) and go to your account's **Publishing** settings.
+2. ➕ Under **Add a new pending publisher** (or on the project page under **Manage** → **Publishing**), fill in:
+   - **PyPI Project Name:** `gh-browse-or-reload`
+   - **Owner:** `ishandutta2007`
+   - **Repository name:** `gh-browse-or-reload`
+   - **Workflow name:** `publish.yml`
+   - **Environment name:** *(leave blank)*
+3. ✅ Click **Add**. That's all — no secrets or tokens to manage!
 
 ### 2️⃣ How to Publish a New Release
 Whenever you are ready to publish a new version to PyPI, simply follow these steps:
@@ -128,7 +133,7 @@ Whenever you are ready to publish a new version to PyPI, simply follow these ste
    git push origin v0.1.1
    ```
 
-That's it! 🎉 Pushing the `v*` tag will automatically trigger the GitHub Actions workflow. The system will build the `.tar.gz` and `.whl` distributions and securely upload them directly to PyPI. You can watch the progress in the **Actions** tab of your GitHub repository.
+That's it! 🎉 Pushing the `v*` tag will automatically trigger the GitHub Actions workflow. The system will build the `.tar.gz` and `.whl` distributions and securely upload them directly to PyPI via OIDC. You can watch the progress in the **Actions** tab of your GitHub repository.
 
 ---
 

@@ -111,6 +111,9 @@ def try_browser_reload(url):
         from http.server import BaseHTTPRequestHandler, HTTPServer
         import threading
         
+        # Event that signals when the browser has actually fetched the page
+        page_served = threading.Event()
+        
         # HTML payload that sends a message to the extension
         html_payload = f"""<!DOCTYPE html>
 <html><body>
@@ -138,28 +141,30 @@ def try_browser_reload(url):
                 self.end_headers()
                 self.wfile.write(html_payload.encode('utf-8'))
                 
-                # Only shut down the server if the main page was requested 
-                # (browsers often fire a concurrent request for /favicon.ico which could eat the single request)
+                # Signal that the main page was served (ignore /favicon.ico etc.)
                 if self.path == '/':
-                    threading.Thread(target=self.server.shutdown).start()
+                    page_served.set()
             
             def log_message(self, format, *args):
-                pass # Suppress terminal logging
+                pass  # Suppress terminal logging
 
-        # Bind to port 0 to get a random free port
         server = HTTPServer(('127.0.0.1', 0), RequestHandler)
         port = server.server_port
         
-        # Start server in a background thread 
-        threading.Thread(target=server.serve_forever, daemon=True).start()
+        # Run server in a non-daemon thread so it stays alive
+        server_thread = threading.Thread(target=server.serve_forever)
+        server_thread.daemon = False
+        server_thread.start()
         
-        # Because we use 'http://', Windows native os.startfile correctly routes to the EXISTING browser!
-        print(f"DEBUG: Handing off to browser via local server on port {port}")
+        # Open URL in the user's existing default browser instance
         os.startfile(f"http://127.0.0.1:{port}/")
         
-        import time
-        # Give the browser up to 5 seconds to fetch the page before the CLI script forcibly exits
-        time.sleep(5)
+        # Block until the browser actually fetches the page (up to 15 seconds)
+        if not page_served.wait(timeout=15):
+            print("Warning: Browser did not fetch the page within 15 seconds.", file=sys.stderr)
+        
+        server.shutdown()
+        server_thread.join(timeout=2)
         
         return True
         
