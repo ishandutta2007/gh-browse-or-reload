@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "gh-browse-or-reload"
 version = "0.1.1"
 authors = [
-  { name="Ishan", email="ishandutta2007@gmail.com" },
+  { name="Ishan Dutta", email="ishandutta2007@gmail.com" },
 ]
 description = "A wrapper around gh browse that reloads an existing browser tab if possible."
 readme = "README.md"
@@ -19,3 +19,9 @@ classifiers = [
 
 [project.scripts]
 gh-browse-or-reload = "gh_browse_or_reload.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/ishandutta2007/gh-browse-or-reload"
+Repository = "https://github.com/ishandutta2007/gh-browse-or-reload"
+Documentation = "https://github.com/ishandutta2007/gh-browse-or-reload#readme"
+Issues = "https://github.com/ishandutta2007/gh-browse-or-reload/issues"
